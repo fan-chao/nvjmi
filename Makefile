@@ -1,4 +1,4 @@
-#makefile for libnvjmi.a
+#makefile for libnvjmi.so
 
 CC      = gcc
 CPP     = g++
