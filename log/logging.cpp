@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+ 
+#include "logging.h"
+#include <strings.h>
+
+
+// set default logging options
+Log::Level Log::mLevel = Log::LOG_DEFAULT;
+FILE* Log::mFile = stdout;
+std::string Log::mFilename = "stdout";
+
+
+// ParseCmdLine
+void Log::ParseCmdLine( const int argc, char** argv )
+{
+	ParseCmdLine(commandLine(argc, argv));
+}
+
+
+// ParseCmdLine
+void Log::ParseCmdLine( const commandLine& cmdLine )
+{
+	const char* levelStr = cmdLine.GetString("log-level");
+
+	if( levelStr != NULL )
+	{
+		SetLevel(LevelFromStr(levelStr));
+	}
+	else
+	{
+		if( cmdLine.GetFlag("verbose") )
+            SetLevel(LOG_VERBOSE);
+
+		if( cmdLine.GetFlag("debug") )
+            SetLevel(LOG_DEBUG);
+	}
+
+	SetFile(cmdLine.GetString("log-file"));
+}
+
+
+// SetFile
+void Log::SetFile( FILE* file )
+{
+	if( !file || mFile == file )
+		return;
+
+	mFile = file;
+
+	if( mFile == stdout )
+		mFilename = "stdout";
+	else if( mFile == stderr )
+		mFilename = "stderr";
+}
+
+
+// SetFilename
+void Log::SetFile( const char* filename )
+{
+	if( !filename )
+		return;
+
+	if( strcasecmp(filename, "stdout") == 0 )
+		SetFile(stdout);
+	else if( strcasecmp(filename, "stderr") == 0 )
+		SetFile(stderr);
+	else
+	{
+		if( strcasecmp(filename, mFilename.c_str()) == 0 )
+			return;
+
+		FILE* file = fopen(filename, "w"); 
+
+		if( file != NULL )
+		{
+			SetFile(file);
+			mFilename = filename;
+		}
+		else
+		{
+			LogError("failed to open '%s' for logging\n", filename);
+			return;
+		}
+	}	
+}
+
+// LevelToStr
+const char* Log::LevelToStr( Log::Level level )
+{
+	switch(level)
+	{
+    case LOG_SILENT:	return "silent";
+    case LOG_ERROR:    return "error";
+    case LOG_WARNING:  return "warning";
+    case LOG_SUCCESS:  return "success";
+    case LOG_INFO:	return "info";
+    case LOG_VERBOSE:	return "verbose";
+    case LOG_DEBUG:	return "debug";
+	}
+
+	return "default";
+}
+
+
+// LevelFromStr
+Log::Level Log::LevelFromStr( const char* str )
+{
+	if( !str )
+        return LOG_DEFAULT;
+
+    for (int n = 0; n <= LOG_DEBUG; n++)
+	{
+		const Level level = (Level)n;
+
+		if( strcasecmp(str, LevelToStr(level)) == 0 )
+			return level;
+	}
+
+	if( strcasecmp(str, "disable") == 0 || strcasecmp(str, "disabled") == 0 || strcasecmp(str, "none") == 0 )
+        return LOG_SILENT;
+
+    return LOG_DEFAULT;
+}
+
+
+
+	
