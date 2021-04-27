@@ -616,8 +616,10 @@ namespace jmi {
         }
 
         if (pctx->output_plane_stop_thread) {
-            pctx->output_plane_stop_thread->join();
-            delete pctx->output_plane_stop_thread;
+            if (pctx->output_plane_stop_thread->joinable()) {
+                pctx->output_plane_stop_thread->join();
+            }          
+	    delete pctx->output_plane_stop_thread;
             pctx->output_plane_stop_thread = nullptr;
         }
 
