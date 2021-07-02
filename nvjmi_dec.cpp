@@ -592,8 +592,7 @@ namespace jmi {
         ctx->output_plane_stop = true;
         ctx->capture_plane_stop = true;
 
-        if (ctx->dec->capture_plane.getStreamStatus())
-            ctx->dec->capture_plane.setStreamStatus(false);
+        ctx->dec->abort();
 
         if (ctx->dec_capture_thread && ctx->dec_capture_thread->joinable()) {
             ctx->dec_capture_thread->join();
